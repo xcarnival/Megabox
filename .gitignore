@@ -1,0 +1,7 @@
+node_modules/
+merged/
+build/
+.openzeppelin/
+.env*
+deployed_*
+
