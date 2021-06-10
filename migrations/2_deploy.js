@@ -1,4 +1,4 @@
-var { deployProxy, admin } = require("@openzeppelin/truffle-upgrades");
+var { deployProxy } = require("@openzeppelin/truffle-upgrades");
 
 var Config = artifacts.require("Config");
 var Coin = artifacts.require("Coin");
@@ -7,6 +7,10 @@ var Asset = artifacts.require("Asset");
 var Broker = artifacts.require("Broker");
 var Position = artifacts.require("Position");
 var Main = artifacts.require("Main");
+
+var fs = require("fs"),
+    path = require("path"),
+    util = require('util');
 
 module.exports = async function (deployer, network) {
     network = /([a-z]+)(-fork)?/.exec(network)[1];
@@ -46,7 +50,9 @@ module.exports = async function (deployer, network) {
         initializer: false,
     });
 
-    console.log(
+    var output = path.join(path.dirname(__dirname), util.format("deployed_%s.json", Date.now()));
+    fs.writeFileSync(
+        output,
         JSON.stringify(
             {
                 Main: Main.address,
