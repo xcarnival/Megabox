@@ -123,7 +123,7 @@ contract Main is ReentrancyGuardUpgradeable {
     function withdraw(address token, uint256 reserve) public nonReentrant notLocked {
         _withdraw(token, reserve);
         require(
-            ade(msg.sender, token) >= IConfig(config).aade(token),
+            ade(msg.sender, token) >= IConfig(config).bade(token),
             "Adequacy ratio too low"
         );
         IBroker(broker).publish(
@@ -227,7 +227,7 @@ contract Main is ReentrancyGuardUpgradeable {
         }
 
         uint256 __supply = supply.sub(_supply);
-        IBurnable(coin).burn(msg.sender, __supply);
+        IBurnable(coin).burnFrom(msg.sender, __supply);
         _withdraw(token, reserve);
         IBroker(broker).publish(
             keccak256("exchange"),
@@ -322,7 +322,7 @@ contract Main is ReentrancyGuardUpgradeable {
         require(IConfig(config).hasToken(token), "Token not supported");
         uint256 _supply = IBalance(balance).supply(msg.sender, token);
         require(_supply >= supply, "Insufficient supply to burn");
-        IBurnable(coin).burn(msg.sender, supply);
+        IBurnable(coin).burnFrom(msg.sender, supply);
         IBalance(balance).burn(msg.sender, token, supply);
     }
 
