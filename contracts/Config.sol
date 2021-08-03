@@ -2,9 +2,9 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts-upgradeable/utils/EnumerableSetUpgradeable.sol";
-import "./lib/Locked.sol";
+import "./lib/Paused.sol";
 
-contract Config is Locked {
+contract Config is Paused {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     struct Collateral {
@@ -19,17 +19,19 @@ contract Config is Locked {
     EnumerableSetUpgradeable.AddressSet private _tokens;
 
     uint256 public step; //单次最低铸币量(所有币种)
-    uint256 public gade; //全局充足率 //global adequacy ratio
+    uint256 public gade; //global adequacy ratio
     uint256 public flashloanFee;
-    address public flashloanFeeRecipient;
+    address public feeRecipient;
     address public oracle;
+    uint256 public exFee;
+    uint256 public mintFee;
 
     function initialize(
         address admin,
         address owner,
         address locker
     ) public initializer {
-        __Locked_init(admin, owner, locker);
+        __Paused_init(admin, owner, locker);
     }
 
     function bade(address token) external view returns (uint256) {
@@ -44,7 +46,7 @@ contract Config is Locked {
         return collaterals[token].fade;
     }
 
-    function hasToken(address token) public view returns (bool) {
+    function hasToken(address token) external view returns (bool) {
         return _tokens.contains(token);
     }
 
@@ -56,19 +58,19 @@ contract Config is Locked {
         return addresses;
     }
 
-    function line(address token) public view returns (uint256) {
+    function line(address token) external view returns (uint256) {
         return collaterals[token].line;
     }
 
-    function isDeprecated(address token) public view returns(bool) {
+    function isDeprecated(address token) external view returns (bool) {
         return collaterals[token].isDeprecated;
     }
 
-    function setStep(uint256 _step) public onlyOwner {
+    function setStep(uint256 _step) external onlyOwner {
         step = _step;
     }
 
-    function setOracle(address _oracle) public onlyOwner {
+    function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
     }
 
@@ -78,8 +80,8 @@ contract Config is Locked {
         uint256 _bade,
         uint256 _aade,
         uint256 _fade
-    ) public onlyOwner {
-        require(hasToken(_token), "Not found token");
+    ) external onlyOwner {
+        require(_tokens.contains(_token), "Not found token");
         require(_bade > _aade && _aade > _fade, "Partial order required");
 
         collaterals[_token].bade = _bade;
@@ -87,39 +89,47 @@ contract Config is Locked {
         collaterals[_token].fade = _fade;
     }
 
-    function setLine(address token, uint256 _line) public onlyOwner {
-        require(hasToken(token), "Not found token");
+    function setLine(address token, uint256 _line) external onlyOwner {
+        require(_tokens.contains(token), "Not found token");
         collaterals[token].line = _line;
     }
 
-    function setGade(uint256 _gade) public onlyOwner {
+    function setGade(uint256 _gade) external onlyOwner {
         gade = _gade;
     }
 
-    function addToken(address token) public onlyOwner {
+    function addToken(address token) external onlyOwner {
         require(
-            _tokens.add(token) || isDeprecated(token),
+            _tokens.add(token) || collaterals[token].isDeprecated,
             "Added token exists"
         );
         collaterals[token].isDeprecated = false;
     }
 
-    function deprecateToken(address token) public onlyOwner {
+    function deprecateToken(address token) external onlyOwner {
         require(_tokens.contains(token), "Not found token");
         collaterals[token].isDeprecated = true;
     }
 
-    function removeToken(address token) public onlyOwner {
-        require(isDeprecated(token), "Not isDeprecated Token");
+    function removeToken(address token) external onlyOwner {
+        require(collaterals[token].isDeprecated, "Not isDeprecated Token");
         require(_tokens.remove(token), "Not found token");
         collaterals[token].isDeprecated = false;
     }
 
-    function setFlashloanFee(uint256 _flashloanFee) public onlyOwner {
+    function setFlashloanFee(uint256 _flashloanFee) external onlyOwner {
         flashloanFee = _flashloanFee;
     }
 
-    function setFlashloanFeeRecipient(address _flashloanFeeRecipient) public onlyOwner {
-        flashloanFeeRecipient = _flashloanFeeRecipient;
+    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        feeRecipient = _feeRecipient;
+    }
+
+    function setExFee(uint256 _exFee) external onlyOwner {
+        exFee = _exFee;
+    }
+
+    function setMintFee(uint256 _mintFee) external onlyOwner {
+        mintFee = _mintFee;
     }
 }

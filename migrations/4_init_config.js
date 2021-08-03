@@ -2,10 +2,12 @@ var path = require("path");
 var Config = artifacts.require("Config");
 var BigNumber = require("bignumber.js");
 
-
 module.exports = async function (deployer, network) {
     network = /([a-z]+)(-fork)?/.exec(network)[1];
-    var deployConfig = require(path.join(path.dirname(__dirname), "deploy-config.json"))[network];
+    var deployConfig = require(path.join(
+        path.dirname(__dirname),
+        "deploy-config.json"
+    ))[network];
     var config = await Config.deployed();
 
     for (let i = 0; i < deployConfig.tokens.length; ++i) {
@@ -57,4 +59,16 @@ module.exports = async function (deployer, network) {
 
     console.log(`config.setOracle(oracle = ${deployConfig.oracle})`);
     await config.setOracle(deployConfig.oracle);
+
+    console.log(`config.setExFee(fee = ${deployConfig.exFee})`);
+    await config.setExFee(deployConfig.exFee);
+
+    console.log(`config.setMintFee(fee = ${deployConfig.mintFee})`);
+    await config.setMintFee(deployConfig.mintFee);
+
+    console.log(`config.setFlashloanFee(fee = ${deployConfig.flashloanFee})`);
+    await config.setFlashloanFee(deployConfig.flashloanFee);
+
+    console.log(`config.setFeeRecipient(fee = ${deployConfig.feeRecipient})`);
+    await config.setFeeRecipient(deployConfig.feeRecipient);
 };

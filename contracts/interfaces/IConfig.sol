@@ -13,6 +13,8 @@ interface IConfig {
     function hasToken(address token) external view returns(bool);
     function isDeprecated(address token) external view returns(bool);
     function flashloanFee() external view returns(uint256);
-    function flashloanFeeRecipient() external view returns(address payable);
-    function locked() external view returns(bool);
+    function feeRecipient() external view returns(address payable);
+    function paused() external view returns(bool);
+    function exFee() external view returns(uint256);
+    function mintFee() external view returns(uint256);
 }

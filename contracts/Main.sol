@@ -95,8 +95,8 @@ contract Main is ReentrancyGuardUpgradeable {
         position = _position;
     }
 
-    modifier notLocked() {
-        require(!IConfig(config).locked(), "Locked");
+    modifier notPaused() {
+        require(!IConfig(config).paused(), "Paused");
         _;
     }
 
@@ -104,7 +104,7 @@ contract Main is ReentrancyGuardUpgradeable {
         public
         payable
         nonReentrant
-        notLocked
+        notPaused
     {
         uint256 _reserve = _deposit(token, reserve);
         IBroker(broker).publish(
@@ -120,7 +120,11 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function withdraw(address token, uint256 reserve) public nonReentrant notLocked {
+    function withdraw(address token, uint256 reserve)
+        public
+        nonReentrant
+        notPaused
+    {
         _withdraw(token, reserve);
         require(
             ade(msg.sender, token) >= IConfig(config).bade(token),
@@ -138,7 +142,7 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function mint(address token, uint256 supply) public nonReentrant notLocked {
+    function mint(address token, uint256 supply) public nonReentrant notPaused {
         _mint(token, supply);
         IBroker(broker).publish(
             keccak256("mint"),
@@ -152,7 +156,7 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function burn(address token, uint256 supply) public nonReentrant notLocked {
+    function burn(address token, uint256 supply) public nonReentrant notPaused {
         _burn(token, supply);
         IBroker(broker).publish(
             keccak256("burn"),
@@ -170,7 +174,7 @@ contract Main is ReentrancyGuardUpgradeable {
         address token, //deposit token
         uint256 reserve,
         uint256 supply
-    ) public payable nonReentrant notLocked {
+    ) public payable nonReentrant notPaused {
         uint256 _reserve = _deposit(token, reserve);
         _mint(token, supply);
         IBroker(broker).publish(
@@ -189,10 +193,10 @@ contract Main is ReentrancyGuardUpgradeable {
     }
 
     function exchange(
-        uint256 supply, 
+        uint256 supply,
         address token,
-        address[] memory users 
-    ) public nonReentrant notLocked {
+        address[] memory users
+    ) public nonReentrant notPaused {
         require(supply > 0, "Invalid argument: supply");
         address[] memory _users = _refresh(token, users);
         require(_users.length != 0, "No frozens");
@@ -228,7 +232,7 @@ contract Main is ReentrancyGuardUpgradeable {
 
         uint256 __supply = supply.sub(_supply);
         IBurnable(coin).burnFrom(msg.sender, __supply);
-        _withdraw(token, reserve);
+        _withdraw_withfee(token, reserve, IConfig(config).exFee());
         IBroker(broker).publish(
             keccak256("exchange"),
             abi.encode(msg.sender, __supply, token, reserve, _users)
@@ -250,8 +254,12 @@ contract Main is ReentrancyGuardUpgradeable {
         address token,
         uint256 amount,
         bytes memory params
-    ) public nonReentrant notLocked {
-        require(IConfig(config).hasToken(token) && !IConfig(config).isDeprecated(token), "Token not supported to flashloan");
+    ) public nonReentrant notPaused {
+        require(
+            IConfig(config).hasToken(token) &&
+                !IConfig(config).isDeprecated(token),
+            "Token not supported to flashloan"
+        );
 
         require(amount > 0, "Invalid argument: amount");
         uint256 balancesBefore = IAsset(asset).balances(token);
@@ -268,9 +276,16 @@ contract Main is ReentrancyGuardUpgradeable {
         flashLoanReceiver.execute(token, amount, fee, asset, params);
 
         uint256 balancesAfter = IAsset(asset).balances(token);
-        require(balancesAfter == balancesBefore.add(fee), "Insufficient repayment");
+        require(
+            balancesAfter == balancesBefore.add(fee),
+            "Insufficient repayment"
+        );
 
-        IAsset(asset).withdraw(IConfig(config).flashloanFeeRecipient(), token, fee);
+        IAsset(asset).withdraw(
+            IConfig(config).feeRecipient(),
+            token,
+            fee
+        );
         emit FlashLoan(receiver, token, amount, fee, block.timestamp);
     }
 
@@ -306,9 +321,10 @@ contract Main is ReentrancyGuardUpgradeable {
         address[] memory tokens = IConfig(config).tokens();
         for (uint256 i = 0; i < tokens.length; ++i) {
             reserve_values = reserve_values.add(
-                IBalance(balance).reserve(tokens[i]).mul(_getLatestPrice(tokens[i])).div(
-                    10**_dec(tokens[i])
-                )
+                IBalance(balance)
+                    .reserve(tokens[i])
+                    .mul(_getLatestPrice(tokens[i]))
+                    .div(10**_dec(tokens[i]))
             );
         }
         uint256 gsupply_values = IBalance(balance).gsupply();
@@ -331,39 +347,62 @@ contract Main is ReentrancyGuardUpgradeable {
         returns (uint256)
     {
         require(
-            IConfig(config).hasToken(token) && !IConfig(config).isDeprecated(token),
+            IConfig(config).hasToken(token) &&
+                !IConfig(config).isDeprecated(token),
             "Token not supported to deposit"
         );
-        uint256 _reserve =
-            IAsset(asset).deposit{value: msg.value}(msg.sender, token, reserve);
+        uint256 _reserve = IAsset(asset).deposit{value: msg.value}(
+            msg.sender,
+            token,
+            reserve
+        );
         IBalance(balance).deposit(msg.sender, token, _reserve);
         return _reserve;
     }
 
     function _mint(address token, uint256 supply) internal {
-        require(IConfig(config).hasToken(token) && !IConfig(config).isDeprecated(token),
+        require(
+            IConfig(config).hasToken(token) &&
+                !IConfig(config).isDeprecated(token),
             "Token not supported to mint"
         );
 
         uint256 _step = IConfig(config).step();
         require(supply >= _step, "Minted too little");
 
-        IMintable(coin).mint(msg.sender, supply);
         IBalance(balance).mint(msg.sender, token, supply);
-        require(ade(msg.sender, token) >= IConfig(config).bade(token), "Adequacy ratio too low");
+
+        uint256 feeAmount = supply.mul(IConfig(config).mintFee()).div(1e18);
+        IMintable(coin).mint(
+            IConfig(config).feeRecipient(),
+            feeAmount
+        );
+        uint256 mintAmount = supply.sub(feeAmount);
+        IMintable(coin).mint(msg.sender, mintAmount);
+
+        require(
+            ade(msg.sender, token) >= IConfig(config).bade(token),
+            "Adequacy ratio too low"
+        );
 
         uint256 _supply = IBalance(balance).supply(token);
         uint256 _line = IConfig(config).line(token);
         require(_supply <= _line, "Supply reaches ceiling");
     }
 
-    function _withdraw(address token, uint256 reserve) internal {
+    function _withdraw_withfee(address token, uint256 reserve, uint256 fee) internal {
         require(IConfig(config).hasToken(token), "Token not supported to mint");
         uint256 _reserve = IBalance(balance).reserve(msg.sender, token);
         require(_reserve >= reserve, "Insufficient reserve to withdraw");
         IBalance(balance).withdraw(msg.sender, token, reserve);
-        IAsset(asset).withdraw(msg.sender, token, reserve);
-        //充足率检测在外部调用处进行.
+        uint256 feeAmount = reserve.mul(fee).div(1e18);
+        uint256 withdrawAmount = reserve.sub(feeAmount);
+        IAsset(asset).withdraw(msg.sender, token, withdrawAmount);
+        IAsset(asset).withdraw(IConfig(config).feeRecipient(), token, feeAmount);
+    }
+
+    function _withdraw(address token, uint256 reserve) internal {
+        _withdraw_withfee(token, reserve, 0);
     }
 
     function _getLatestPrice(address token) internal view returns (uint256) {
@@ -385,11 +424,9 @@ contract Main is ReentrancyGuardUpgradeable {
     {
         uint256 n = 0;
         for (uint256 i = 0; i < users.length; ++i)
-            if (_isfade(users[i], token))
-                users[n++] = users[i];
+            if (_isfade(users[i], token)) users[n++] = users[i];
         address[] memory _users = new address[](n);
-        for (uint256 i = 0; i < n; ++i)
-            _users[i] = users[i];
+        for (uint256 i = 0; i < n; ++i) _users[i] = users[i];
         return _users;
     }
 
