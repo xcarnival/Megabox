@@ -34,9 +34,7 @@ module.exports = {
         step: "10000000000000000000", //10 * 1e18
         gade: "900000000000000000", //90%
         oracle: "0xe807f740e0f128250ef048eea07f42552ce6ab1b",
-        exFee: "1000000000000000", //0.1%
         mintFee: "1000000000000000", //0.1%
-        flashloanFee: "800000000000000", //0.08%
         feeRecipient: "0xfD1412eE517b9eD95E42568603178C4d4CB83E68",
     },
     bscmain: {

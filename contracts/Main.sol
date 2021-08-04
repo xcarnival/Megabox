@@ -14,7 +14,6 @@ import "./interfaces/IBurnable.sol";
 import "./interfaces/IMintable.sol";
 import "./interfaces/IBroker.sol";
 import "./interfaces/IPosition.sol";
-import "./interfaces/IFlashLoanReceiver.sol";
 
 contract Main is ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -61,14 +60,6 @@ contract Main is ReentrancyGuardUpgradeable {
         uint256 coinsupply,
         address[] frozens,
         uint256 price
-    );
-
-    event FlashLoan(
-        address indexed receiver,
-        address indexed token,
-        uint256 amount,
-        uint256 fee,
-        uint256 time
     );
 
     address public config;
@@ -195,13 +186,13 @@ contract Main is ReentrancyGuardUpgradeable {
     function exchange(
         uint256 supply,
         address token,
-        address[] memory users
+        address[] memory users //frozen positions
     ) public nonReentrant notPaused {
         require(supply > 0, "Invalid argument: supply");
         address[] memory _users = _refresh(token, users);
         require(_users.length != 0, "No frozens");
-
-        //缓存被冻结仓位的状态. 避免兑换人自己的仓位也属于冻结仓位时, 避免由于其他仓位数据划转(到兑换人的仓位)而导致兑换人自己的仓位数据发生变化
+        // Cache the status of frozen positions.
+        // Avoid changes to the liquidator's own position data due to the transfer of other positions (to the liquidator's position) when the liquidator's own position is also a frozen position
         IBalance.Swap[] memory swaps = new IBalance.Swap[](_users.length);
         for (uint256 i = 0; i < _users.length; ++i) {
             //fix: Stack too deep, try removing local variables.
@@ -232,7 +223,7 @@ contract Main is ReentrancyGuardUpgradeable {
 
         uint256 __supply = supply.sub(_supply);
         IBurnable(coin).burnFrom(msg.sender, __supply);
-        _withdraw_withfee(token, reserve, IConfig(config).exFee());
+        _withdraw(token, reserve);
         IBroker(broker).publish(
             keccak256("exchange"),
             abi.encode(msg.sender, __supply, token, reserve, _users)
@@ -249,47 +240,35 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function flashloan(
-        address receiver,
-        address token,
-        uint256 amount,
-        bytes memory params
-    ) public nonReentrant notPaused {
-        require(
-            IConfig(config).hasToken(token) &&
-                !IConfig(config).isDeprecated(token),
-            "Token not supported to flashloan"
-        );
+    //充足率 (Adequacy ratio)
 
-        require(amount > 0, "Invalid argument: amount");
-        uint256 balancesBefore = IAsset(asset).balances(token);
-        require(balancesBefore >= amount, "Insufficient balance to flashloan");
-
-        uint256 flashloanFee = IConfig(config).flashloanFee();
-        uint256 fee = amount.mul(flashloanFee).div(1e18);
-        require(fee > 0, "Fee too low");
-
-        IFlashLoanReceiver flashLoanReceiver = IFlashLoanReceiver(receiver);
-        address payable _receiver = address(uint160(receiver));
-
-        IAsset(asset).withdraw(_receiver, token, amount);
-        flashLoanReceiver.execute(token, amount, fee, asset, params);
-
-        uint256 balancesAfter = IAsset(asset).balances(token);
-        require(
-            balancesAfter == balancesBefore.add(fee),
-            "Insufficient repayment"
-        );
-
-        IAsset(asset).withdraw(
-            IConfig(config).feeRecipient(),
-            token,
-            fee
-        );
-        emit FlashLoan(receiver, token, amount, fee, block.timestamp);
+    function _getValue(
+        uint256 totalSupply,
+        uint256 supply,
+        uint256 reserve
+    ) internal pure returns (uint256, uint256) {
+        uint256 rid = MathUpgradeable.min(supply, totalSupply);
+        uint256 lot = rid.mul(reserve).div(supply);
+        lot = MathUpgradeable.min(lot, reserve);
+        return (rid, lot);
     }
 
-    //充足率 (Adequacy ratio)
+    function _profit(
+        address token,
+        uint256 reserve,
+        uint256 supply
+    ) internal view returns (uint256) {
+        if (supply == 0) return 0;
+        uint256 _ade = reserve
+            .mul(_getLatestPrice(token))
+            .mul(10**_dec(coin))
+            .div(10**_dec(token))
+            .div(supply);
+        if (_ade > 1e18) {
+            return reserve.mul(_ade.sub(1e18));
+        }
+        return 0;
+    }
 
     //@who @token 对应的资产充足率
     function ade(address owner, address token) public view returns (uint256) {
@@ -373,10 +352,7 @@ contract Main is ReentrancyGuardUpgradeable {
         IBalance(balance).mint(msg.sender, token, supply);
 
         uint256 feeAmount = supply.mul(IConfig(config).mintFee()).div(1e18);
-        IMintable(coin).mint(
-            IConfig(config).feeRecipient(),
-            feeAmount
-        );
+        IMintable(coin).mint(IConfig(config).feeRecipient(), feeAmount);
         uint256 mintAmount = supply.sub(feeAmount);
         IMintable(coin).mint(msg.sender, mintAmount);
 
@@ -390,19 +366,15 @@ contract Main is ReentrancyGuardUpgradeable {
         require(_supply <= _line, "Supply reaches ceiling");
     }
 
-    function _withdraw_withfee(address token, uint256 reserve, uint256 fee) internal {
+    function _withdraw(
+        address token,
+        uint256 reserve
+    ) internal {
         require(IConfig(config).hasToken(token), "Token not supported to mint");
         uint256 _reserve = IBalance(balance).reserve(msg.sender, token);
         require(_reserve >= reserve, "Insufficient reserve to withdraw");
         IBalance(balance).withdraw(msg.sender, token, reserve);
-        uint256 feeAmount = reserve.mul(fee).div(1e18);
-        uint256 withdrawAmount = reserve.sub(feeAmount);
-        IAsset(asset).withdraw(msg.sender, token, withdrawAmount);
-        IAsset(asset).withdraw(IConfig(config).feeRecipient(), token, feeAmount);
-    }
-
-    function _withdraw(address token, uint256 reserve) internal {
-        _withdraw_withfee(token, reserve, 0);
+        IAsset(asset).withdraw(msg.sender, token, reserve);
     }
 
     function _getLatestPrice(address token) internal view returns (uint256) {

@@ -53,14 +53,8 @@ module.exports = async function (deployer, network) {
     console.log(`config.setOracle(oracle = ${deployConfig.oracle})`);
     await config.setOracle(deployConfig.oracle);
 
-    console.log(`config.setExFee(fee = ${deployConfig.exFee})`);
-    await config.setExFee(deployConfig.exFee);
-
     console.log(`config.setMintFee(fee = ${deployConfig.mintFee})`);
     await config.setMintFee(deployConfig.mintFee);
-
-    console.log(`config.setFlashloanFee(fee = ${deployConfig.flashloanFee})`);
-    await config.setFlashloanFee(deployConfig.flashloanFee);
 
     console.log(`config.setFeeRecipient(fee = ${deployConfig.feeRecipient})`);
     await config.setFeeRecipient(deployConfig.feeRecipient);

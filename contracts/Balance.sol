@@ -62,7 +62,7 @@ contract Balance is Owned {
         gsupply = gsupply.add(supply);
     }
 
-    //销毁 @payer 的 QIAN, 并且增加相应的 @reserve 记录给 @payer, 同时 @who 减少相应的记录.
+    //Destroy USDxc of @payer, and add corresponding @reserve records to @payer, while @owner reduces the corresponding records.
     function exchange(
         address payer,
         address owner,

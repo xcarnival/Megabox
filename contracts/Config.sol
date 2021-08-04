@@ -11,19 +11,17 @@ contract Config is Paused {
         uint256 bade; //Basic Adequacy ratio
         uint256 aade; //Alarm Adequacy ratio
         uint256 fade; //Frozen Adequacy ratio
-        uint256 line; //
+        uint256 line; 
         bool isDeprecated;
     }
 
     mapping(address => Collateral) public collaterals;
     EnumerableSetUpgradeable.AddressSet private _tokens;
 
-    uint256 public step; //单次最低铸币量(所有币种)
+    uint256 public step; //Single mint minimum limit
     uint256 public gade; //global adequacy ratio
-    uint256 public flashloanFee;
     address public feeRecipient;
     address public oracle;
-    uint256 public exFee;
     uint256 public mintFee;
 
     function initialize(
@@ -117,19 +115,12 @@ contract Config is Paused {
         collaterals[token].isDeprecated = false;
     }
 
-    function setFlashloanFee(uint256 _flashloanFee) external onlyOwner {
-        flashloanFee = _flashloanFee;
-    }
-
     function setFeeRecipient(address _feeRecipient) external onlyOwner {
         feeRecipient = _feeRecipient;
     }
 
-    function setExFee(uint256 _exFee) external onlyOwner {
-        exFee = _exFee;
-    }
-
     function setMintFee(uint256 _mintFee) external onlyOwner {
+        require(_mintFee <= 10000000000000000, "maximum 1% mint fee"); 
         mintFee = _mintFee;
     }
 }
