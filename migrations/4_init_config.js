@@ -6,7 +6,7 @@ module.exports = async function (deployer, network) {
     network = /([a-z]+)(-fork)?/.exec(network)[1];
     var deployConfig = require(path.join(
         path.dirname(__dirname),
-        "deploy-config.json"
+        "deploy-config.js"
     ))[network];
     var config = await Config.deployed();
 
@@ -44,18 +44,11 @@ module.exports = async function (deployer, network) {
         await config.setLine(token.address, line);
     }
 
-    var step = BigNumber(deployConfig.step).multipliedBy(1e18).toFixed();
+    console.log(`config.setStep(step = ${deployConfig.step}`);
+    await config.setStep(deployConfig.step);
 
-    console.log(`config.setStep(step = ${step}`);
-    await config.setStep(step);
-
-    var gade = BigNumber(deployConfig.gade)
-        .multipliedBy(1e18)
-        .dividedBy(100)
-        .toFixed();
-
-    console.log(`config.setGade(gade = ${gade})`);
-    await config.setGade(gade);
+    console.log(`config.setGade(gade = ${deployConfig.gade})`);
+    await config.setGade(deployConfig.gade);
 
     console.log(`config.setOracle(oracle = ${deployConfig.oracle})`);
     await config.setOracle(deployConfig.oracle);

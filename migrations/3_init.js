@@ -11,13 +11,16 @@ var Main = artifacts.require("Main");
 module.exports = async function (deployer, network) {
     network = /([a-z]+)(-fork)?/.exec(network)[1];
 
-    var deployConfig = require(path.join(path.dirname(__dirname), "deploy-config.json"))[network];
+    var deployConfig = require(path.join(
+        path.dirname(__dirname),
+        "deploy-config.js"
+    ))[network];
 
     // var sender = deployer.networks[network].from;
     // console.log("sender: " + sender + "");
 
     var config = await Config.deployed();
-    console.log("confit.initialize");
+    console.log("config.initialize");
     await config.initialize(
         deployConfig.role.admin,
         deployConfig.role.owner,
