@@ -69,6 +69,7 @@ contract Config is Paused {
     }
 
     function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Oracle is a zero address");
         oracle = _oracle;
     }
 
@@ -116,6 +117,7 @@ contract Config is Paused {
     }
 
     function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        require(_feeRecipient != address(0), "FeeRecipient is a zero address");
         feeRecipient = _feeRecipient;
     }
 

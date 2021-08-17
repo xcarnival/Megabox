@@ -40,6 +40,7 @@ contract Asset is Owned {
         address token,
         uint256 reserve
     ) public onlyOwner returns (uint256) {
+        require(receiver != address(0), "Receiver is a zero address");
         if (token == address(0)) {
             receiver.transfer(reserve);
         } else {
