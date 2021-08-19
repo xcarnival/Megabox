@@ -240,37 +240,6 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    //充足率 (Adequacy ratio)
-
-    function _getValue(
-        uint256 totalSupply,
-        uint256 supply,
-        uint256 reserve
-    ) internal pure returns (uint256, uint256) {
-        uint256 rid = MathUpgradeable.min(supply, totalSupply);
-        uint256 lot = rid.mul(reserve).div(supply);
-        lot = MathUpgradeable.min(lot, reserve);
-        return (rid, lot);
-    }
-
-    function _profit(
-        address token,
-        uint256 reserve,
-        uint256 supply
-    ) internal view returns (uint256) {
-        if (supply == 0) return 0;
-        uint256 _ade = reserve
-            .mul(_getLatestPrice(token))
-            .mul(10**_dec(coin))
-            .div(10**_dec(token))
-            .div(supply);
-        if (_ade > 1e18) {
-            return reserve.mul(_ade.sub(1e18));
-        }
-        return 0;
-    }
-
-    //@who @token 对应的资产充足率
     function ade(address owner, address token) public view returns (uint256) {
         IBalance.Swap memory swap = IBalance(balance).swaps(owner, token);
         if (swap.supply == 0) return uint256(-1);
