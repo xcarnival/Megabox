@@ -5,7 +5,7 @@ interface IConfig {
     function bade(address token) external view returns (uint256);
     function aade(address token) external view returns (uint256);
     function fade(address token) external view returns (uint256);
-    function gade() external view returns(uint256);
+
     function line(address token) external view returns (uint256);
     function step() external view returns (uint256);
     function oracle() external view returns (address);

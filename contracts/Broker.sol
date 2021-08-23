@@ -28,7 +28,7 @@ contract Broker is ReentrancyGuardUpgradeable, Published {
         address publisher, 
         bytes32 topic, 
         bytes4 handler
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             handlers[subscriber][publisher][topic] != handler,
             "Already subscribed"
@@ -41,7 +41,7 @@ contract Broker is ReentrancyGuardUpgradeable, Published {
         address subscriber,
         address publisher,
         bytes32 topic
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             handlers[subscriber][publisher][topic] != bytes4(0),
             "Not found subscribed topic"

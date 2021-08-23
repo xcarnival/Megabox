@@ -15,7 +15,7 @@ contract Asset is Owned {
         require(msg.sender.isContract(), "Only contracts can send ether");
     }
 
-    function initialize(address admin, address owner) public initializer {
+    function initialize(address admin, address owner) external initializer {
         __Owned_init(admin, owner);
     }
 
@@ -23,15 +23,24 @@ contract Asset is Owned {
         address payer,
         address token,
         uint256 reserve
-    ) public payable onlyOwner returns (uint256) {
+    ) external payable onlyOwner returns (uint256) {
         if (token == address(0)) {
             require(msg.value == reserve, "Unexpected msg.value");
             return reserve;
         } else {
             require(msg.value == 0, "Unexpected msg.value");
-            uint256 balanceOfSaved = IERC20Upgradeable(token).balanceOf(address(this));
-            IERC20Upgradeable(token).safeTransferFrom(payer, address(this), reserve);
-            return IERC20Upgradeable(token).balanceOf(address(this)).sub(balanceOfSaved);
+            uint256 balanceOfSaved = IERC20Upgradeable(token).balanceOf(
+                address(this)
+            );
+            IERC20Upgradeable(token).safeTransferFrom(
+                payer,
+                address(this),
+                reserve
+            );
+            return
+                IERC20Upgradeable(token).balanceOf(address(this)).sub(
+                    balanceOfSaved
+                );
         }
     }
 
@@ -39,7 +48,7 @@ contract Asset is Owned {
         address payable receiver,
         address token,
         uint256 reserve
-    ) public onlyOwner returns (uint256) {
+    ) external onlyOwner returns (uint256) {
         require(receiver != address(0), "Receiver is a zero address");
         if (token == address(0)) {
             receiver.transfer(reserve);
@@ -49,14 +58,14 @@ contract Asset is Owned {
         return reserve;
     }
 
-    function balances(address token) public view returns (uint256) {
+    function balances(address token) external view returns (uint256) {
         if (token == address(0)) {
             return address(this).balance;
         }
         return IERC20Upgradeable(token).balanceOf(address(this));
     }
 
-    function decimals(address token) public view returns (uint256) {
+    function decimals(address token) external view returns (uint256) {
         if (token == address(0)) {
             return 18;
         }

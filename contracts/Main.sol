@@ -92,7 +92,7 @@ contract Main is ReentrancyGuardUpgradeable {
     }
 
     function deposit(address token, uint256 reserve)
-        public
+        external 
         payable
         nonReentrant
         notPaused
@@ -112,7 +112,7 @@ contract Main is ReentrancyGuardUpgradeable {
     }
 
     function withdraw(address token, uint256 reserve)
-        public
+        external
         nonReentrant
         notPaused
     {
@@ -133,7 +133,7 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function mint(address token, uint256 supply) public nonReentrant notPaused {
+    function mint(address token, uint256 supply) external nonReentrant notPaused {
         _mint(token, supply);
         IBroker(broker).publish(
             keccak256("mint"),
@@ -147,7 +147,7 @@ contract Main is ReentrancyGuardUpgradeable {
         );
     }
 
-    function burn(address token, uint256 supply) public nonReentrant notPaused {
+    function burn(address token, uint256 supply) external nonReentrant notPaused {
         _burn(token, supply);
         IBroker(broker).publish(
             keccak256("burn"),
@@ -165,7 +165,7 @@ contract Main is ReentrancyGuardUpgradeable {
         address token, //deposit token
         uint256 reserve,
         uint256 supply
-    ) public payable nonReentrant notPaused {
+    ) external payable nonReentrant notPaused {
         uint256 _reserve = _deposit(token, reserve);
         _mint(token, supply);
         IBroker(broker).publish(
@@ -187,7 +187,7 @@ contract Main is ReentrancyGuardUpgradeable {
         uint256 supply,
         address token,
         address[] memory users //frozen positions
-    ) public nonReentrant notPaused {
+    ) external nonReentrant notPaused {
         require(supply > 0, "Invalid argument: supply");
         address[] memory _users = _refresh(token, users);
         require(_users.length != 0, "No frozens");

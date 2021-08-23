@@ -19,7 +19,6 @@ contract Config is Paused {
     EnumerableSetUpgradeable.AddressSet private _tokens;
 
     uint256 public step; //Single mint minimum limit
-    uint256 public gade; //global adequacy ratio
     address public feeRecipient;
     address public oracle;
     uint256 public mintFee;
@@ -91,10 +90,6 @@ contract Config is Paused {
     function setLine(address token, uint256 _line) external onlyOwner {
         require(_tokens.contains(token), "Not found token");
         collaterals[token].line = _line;
-    }
-
-    function setGade(uint256 _gade) external onlyOwner {
-        gade = _gade;
     }
 
     function addToken(address token) external onlyOwner {

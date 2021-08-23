@@ -16,7 +16,7 @@ contract Balance is Owned {
     mapping(address => Swap) public gswaps; //token -> Swap
     uint256 public gsupply;
 
-    function initialize(address admin, address owner) public initializer {
+    function initialize(address admin, address owner) external initializer {
         __Owned_init(admin, owner);
     }
 
@@ -24,7 +24,7 @@ contract Balance is Owned {
         address payer,
         address token,
         uint256 reserve
-    ) public onlyOwner {
+    ) external onlyOwner {
         swaps[payer][token].reserve = swaps[payer][token].reserve.add(reserve);
         gswaps[token].reserve = gswaps[token].reserve.add(reserve);
     }
@@ -33,7 +33,7 @@ contract Balance is Owned {
         address receiver,
         address token,
         uint256 reserve
-    ) public onlyOwner {
+    ) external onlyOwner {
         swaps[receiver][token].reserve = swaps[receiver][token].reserve.sub(
             reserve
         );
@@ -44,7 +44,7 @@ contract Balance is Owned {
         address payer,
         address token,
         uint256 supply
-    ) public onlyOwner {
+    ) external onlyOwner {
         swaps[payer][token].supply = swaps[payer][token].supply.sub(supply);
         gswaps[token].supply = gswaps[token].supply.sub(supply);
         gsupply = gsupply.sub(supply);
@@ -54,7 +54,7 @@ contract Balance is Owned {
         address receiver,
         address token,
         uint256 supply
-    ) public onlyOwner {
+    ) external onlyOwner {
         swaps[receiver][token].supply = swaps[receiver][token].supply.add(
             supply
         );
@@ -69,7 +69,7 @@ contract Balance is Owned {
         address token,
         uint256 supply,
         uint256 reserve
-    ) public onlyOwner {
+    ) external onlyOwner {
         swaps[owner][token].supply = swaps[owner][token].supply.sub(supply);
         gswaps[token].supply = gswaps[token].supply.sub(supply);
         gsupply = gsupply.sub(supply);
@@ -97,7 +97,7 @@ contract Balance is Owned {
         return gswaps[token].reserve;
     }
 
-    function supply(address token) public view returns (uint256) {
+    function supply(address token) external view returns (uint256) {
         return gswaps[token].supply;
     }
 }
