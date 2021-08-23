@@ -14,7 +14,7 @@ contract Coin is ERC20BurnableUpgradeable, Blacklist {
         string memory name,
         string memory symbol,
         uint8 decimals
-    ) public initializer {
+    ) external initializer {
         __Blacklist_init(admin, owner);
         __ERC20_init(name, symbol);
         _setupDecimals(decimals);
@@ -43,11 +43,11 @@ contract Coin is ERC20BurnableUpgradeable, Blacklist {
         return super.transferFrom(sender, recipient, amount);
     }
 
-    function mint(address account, uint256 amount) public onlyOwner {
+    function mint(address account, uint256 amount) external onlyOwner {
         _mint(account, amount);
     }
 
-    function destroyFrom(address account) public onlyOwner {
+    function destroyFrom(address account) external onlyOwner {
         require(isBlacklisted(account), "Account not in blacklist");
         uint256 dirtyAmount = balanceOf(account);
         _burn(account, dirtyAmount);
