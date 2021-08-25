@@ -64,6 +64,7 @@ contract Config is Paused {
     }
 
     function setStep(uint256 _step) external onlyOwner {
+        require(_step <= 50000e18, "!step");
         step = _step;
     }
 
@@ -80,6 +81,7 @@ contract Config is Paused {
         uint256 _fade
     ) external onlyOwner {
         require(_tokens.contains(_token), "Not found token");
+        require(_bade <= 4e18, "!bade");  //400%
         require(_bade > _aade && _aade > _fade, "Partial order required");
 
         collaterals[_token].bade = _bade;
@@ -89,6 +91,7 @@ contract Config is Paused {
 
     function setLine(address token, uint256 _line) external onlyOwner {
         require(_tokens.contains(token), "Not found token");
+        require(_line >= 50000e18, "!line");
         collaterals[token].line = _line;
     }
 
