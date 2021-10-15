@@ -236,7 +236,7 @@ contract Main is ReentrancyGuardUpgradeable {
             IAsset(asset).balances(token),
             IERC20Upgradeable(coin).totalSupply(),
             _users,
-            _getLatestPrice(token)
+            getLatestPrice(token)
         );
     }
 
@@ -246,7 +246,7 @@ contract Main is ReentrancyGuardUpgradeable {
         return
             swap
                 .reserve
-                .mul(_getLatestPrice(token))
+                .mul(getLatestPrice(token))
                 .mul(10**_dec(coin))
                 .div(10**_dec(token))
                 .div(swap.supply);
@@ -258,7 +258,7 @@ contract Main is ReentrancyGuardUpgradeable {
         return
             gswap
                 .reserve
-                .mul(_getLatestPrice(token))
+                .mul(getLatestPrice(token))
                 .mul(10**_dec(coin))
                 .div(10**_dec(token))
                 .div(gswap.supply);
@@ -271,7 +271,7 @@ contract Main is ReentrancyGuardUpgradeable {
             reserve_values = reserve_values.add(
                 IBalance(balance)
                     .reserve(tokens[i])
-                    .mul(_getLatestPrice(tokens[i]))
+                    .mul(getLatestPrice(tokens[i]))
                     .div(10**_dec(tokens[i]))
             );
         }
@@ -346,8 +346,9 @@ contract Main is ReentrancyGuardUpgradeable {
         IAsset(asset).withdraw(msg.sender, token, reserve);
     }
 
-    function _getLatestPrice(address token) internal view returns (uint256) {
-        return IOracle(IConfig(config).oracle()).getLatestPrice(token);
+    function getLatestPrice(address token) public view returns (uint256) {
+        (uint256 price,) = IOracle(IConfig(config).oracle()).get(token);
+        return price;
     }
 
     function _isfade(address owner, address token)

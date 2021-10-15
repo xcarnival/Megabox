@@ -2,5 +2,5 @@
 pragma solidity 0.6.12;
 
 interface IOracle {
-    function getLatestPrice(address token) external view returns (uint256);
+    function get(address token) external view returns (uint256,bool);
 }

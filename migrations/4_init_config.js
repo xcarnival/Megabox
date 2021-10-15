@@ -47,9 +47,6 @@ module.exports = async function (deployer, network) {
     console.log(`config.setStep(step = ${deployConfig.step}`);
     await config.setStep(deployConfig.step);
 
-    console.log(`config.setGade(gade = ${deployConfig.gade})`);
-    await config.setGade(deployConfig.gade);
-
     console.log(`config.setOracle(oracle = ${deployConfig.oracle})`);
     await config.setOracle(deployConfig.oracle);
 
