@@ -38,9 +38,9 @@ module.exports = {
     },
     bscmain: {
         role: {
-            admin: "0xD998DFf64513422872740149abB8906af6Eb01d8",
-            owner: "0x1544ef967AAA3Ed38d180d2E408B01791369E942",
-            locker: "0xeDa09e71Cd933A90f5f5584cFf7ac83dEBE52B5D",
+            admin: "0xEDCdB4B5aCDA997B3eC382eDCd1fb49100AF8049",
+            owner: "0xB2533E5793D17c90E0687Cdc9e5610b0229B1239",
+            locker: "0x02347331742842Cd513974068f50901Efb40e09e",
         },
         tokens: [
             {
@@ -79,6 +79,6 @@ module.exports = {
         step: "100000000000000000000", //100 * 1e18
         oracle: "0xAb6510EfEd4bed584D6ED7a87f3e0A11C5f35328",
         mintFee: "5000000000000000", //0.5%
-        feeRecipient: "0xc4FC9099c0dC21da8625a194Faadbe173FD02219",
+        feeRecipient: "0x26eEEE04c83B8CFB55D5086Cde011f9f04bEEc4e",
     },
 };

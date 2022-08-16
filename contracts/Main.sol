@@ -346,8 +346,9 @@ contract Main is ReentrancyGuardUpgradeable {
         IAsset(asset).withdraw(msg.sender, token, reserve);
     }
 
-    function getLatestPrice(address token) public view returns (uint256) {
-        (uint256 price,) = IOracle(IConfig(config).oracle()).get(token);
+    function getLatestPrice(address token) internal view returns (uint256) {
+        (uint256 price, bool valid) = IOracle(IConfig(config).oracle()).get(token);
+        require(valid, "Price is valid");
         return price;
     }
 

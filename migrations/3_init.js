@@ -44,7 +44,7 @@ module.exports = async function (deployer, network) {
     await coin.initialize(
         deployConfig.role.admin,
         Main.address,
-        "USDxc Token",
+        "USDxc Stablecoin",
         "USDxc",
         "18"
     );
